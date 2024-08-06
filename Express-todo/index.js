@@ -1,7 +1,10 @@
 const express=require('express');
 const port=7000;
 const app=express();
+
 app.use(express.urlencoded());
+app.use(express.static("public"));
+
 app.set("view engine","ejs");
 
 let studentdata=[
@@ -14,6 +17,19 @@ let studentdata=[
     name:"pratik"
   }
 ]
+
+const middleware=async(req,resp,next)=>{
+
+   if(req.query.age >= 18){
+        next();
+
+   } else {
+     resp.redirect("/")
+   }
+}
+
+
+
 app.get("/",(req,resp)=>{
     resp.render("index",{studentdata});
 });
@@ -66,6 +82,19 @@ app.post("/updatedata",(req,resp)=>{
     student.name=name;
    }
    resp.redirect("/");
-})
+});
 
+app.get("/home",middleware,(req,resp)=>{
+  resp.render("home");
+});
+
+app.get("/admin",(req,resp)=>{
+  resp.render("admin")
+});
+
+app.get("/registar",(req,resp)=>{
+  resp.render("registar")
+});
+
+app.use(middleware);
 app.listen(port, console.log(`Server Started by port ${port} .....`));
