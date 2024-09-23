@@ -1,5 +1,5 @@
 const express=require('express');
-const port=8090;
+const port=8080;
 const db=require('./Config/database');
 
 const UserModel=require('./Model/AdminSchema');
@@ -12,6 +12,8 @@ const localSt=require('./Config/passport');
 const passport=require('passport')
 
 const app=express();
+
+
 
 app.set("view engine","ejs");
 app.use(express.urlencoded())
@@ -28,6 +30,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 const routes=require('./Routes/index')
+app.use(passport.setAuth)
 app.use("/",routes)
 
 app.use(express.static(path.join(__dirname,"Public")))

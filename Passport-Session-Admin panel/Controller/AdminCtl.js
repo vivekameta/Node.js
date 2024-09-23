@@ -16,8 +16,14 @@ module.exports.userlogin=(req,res)=>{
   }
 }
 
-module.exports.Logout=(req,res)=>{
-  res.redirect("/Login")
+module.exports.logout=(req,res)=>{
+  try{
+    res.redirect("/");
+  }
+  catch(err){
+    console.log(err);
+    
+  }
 }
 
 module.exports.dashboard=(req,res)=>{

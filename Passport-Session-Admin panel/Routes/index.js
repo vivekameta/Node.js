@@ -1,8 +1,8 @@
 const express=require('express');
 
 const routes=express.Router();
-const passport=require('passport')
 
+const passport=require('passport')
 
 const AdminCtl=require('../Controller/AdminCtl');
 
@@ -20,15 +20,17 @@ const Storage=multer.diskStorage({
 const UploadsPic=multer({storage : Storage}).single("img")
 
 routes.get("/",AdminCtl.Login)
+routes.post("/userlogin",passport.authenticate("local",{failureRedirect : "/"}),AdminCtl.userlogin);
 routes.get("/AddForm",passport.checkAuth,AdminCtl.AddForm)
 routes.get("/ViewForm",passport.checkAuth,AdminCtl.ViewForm)
+
 routes.post("/insserdata",UploadsPic,AdminCtl.insserdata)
 routes.get("/deletedata",AdminCtl.deletedata);
 routes.get("/editdata",AdminCtl.EditForm);
 routes.post("/updatedata",UploadsPic,AdminCtl.Updatedata);
 routes.get("/dashboard",passport.checkAuth,AdminCtl.dashboard)
-routes.post("/userlogin",passport.authenticate("local",{failureRedirect : "/"}),AdminCtl.userlogin);
-routes.get("/Logout",AdminCtl.Logout)
+
+routes.get("/logout",passport.checkAuth,AdminCtl.logout)
 
 
 
