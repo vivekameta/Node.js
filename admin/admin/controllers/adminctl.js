@@ -3,151 +3,44 @@ let path=require('path');
 const fs=require('fs');
 const { log } = require("console");
 
-
+const mailer=require('../config/mailer')
 
 module.exports.Login=(req,res)=>{
-    try{
-      res.render("Login")
-    }
-    catch(err){
-        console.log(err)
-    }
+    
+    res.render("Login")
 }
 
 module.exports.Logout=(req,res)=>{
-    try {
-        res.clearCookie("admin")
+  
         res.redirect("/")
-    }
-    catch(err){
-        console.log(err);   
-    }
+    
 }
 
 module.exports.userlogin=async(req,res)=>{
-    try {
-    const user=await UserModel.findOne({email : req.body.email});
- 
-    // req.cookies() // 
-    // res.cookie() //
-
-     if(user){
-
-        if(user.password==req.body.password){
-              res.cookie("admin",user);
-              res.redirect("/dashboard")
-        }
-        else {
-            res.redirect("/")
-            console.log("User Not found");
-        }
-     }
-     else {
-         console.log("User Not Found");
-         
-     }
-    
-       }
-       catch(err){
-         console.log(err);
-         
-       }
-   
+       req.flash("success","Login Successfully.....!!!");
+        res.redirect("/dashboard")  
   
 }
 
 module.exports.table=(req,res)=>{
-    try{
+    
     res.render("table")
-        
-    }
-    catch(err){
-       console.log(err);
-       
-    }
 }
 module.exports.dashboard=async(req,res)=>{
     
-    try {
-         
-        if(req.cookies.admin===undefined){
-            res.redirect("/")
-        }
-        else {
-            const Userdata =await UserModel.findById(req.cookies.admin._id);
-
-            console.log(Userdata)
-            
-            if(Userdata){
-                res.render("dashboard")
-            }
-            else {
-                res.redirect("/");
-            }
-        }
-    }
-    catch (err){
-        console.log(err);
-        
-    }
-       
-
-
+    res.render("dashboard")
 
 }
 module.exports.AddForm=async(req,res)=>{
 
-      
-     
-     try {
-            if(req.cookies.admin===undefined){
-                res.redirect("/")
-            }
-            else {
-
-                const Userdata=await UserModel.findById(req.cookies.admin._id)
-                
-                if(Userdata){
-
-                     res.render("AddForm")
-
-                }
-                else {
-                    res.redirect("/")
-                }
-            }
-            
-     } catch(err){  
-
-          console.log(err);
-          
-     }
-     
-
+    res.render("AddForm")
+    
 }
 module.exports.ViewForm=async(req,res)=>{
+    const data=await UserModel.find({})
 
-    try{
-     if(req.cookies.admin==undefined){
-        res.redirect("/")
-     }
-     else{
-        const Userdata=await UserModel.findById(req.cookies.admin._id)
-         
-        if(Userdata){
-            const data=await UserModel.find({})
-            res.render("ViewForm",{data})
-        }
-        else {
-            res.redirect("/")
-        }
-    
-     }
-    }
-    catch(err){
-        console.log(err);
-        
-    }
+     data ?  res.render("ViewForm",{data}) : res.redirect("/")    
+            
 }
 module.exports.insserdata=async(req,res)=>{
 
@@ -187,28 +80,13 @@ module.exports.deletedata=async(req,res)=>{
 
 module.exports.editdata=async(req,res)=>{
 
-      try{
+    const editdata=await UserModel.findById(req.query.id)
 
-    if(req.cookies.admin===undefined){
-         res.redirect("/")
-    }
-    else{
-            const Userdata=await UserModel.findById(req.cookies.admin._id)
-            if(Userdata){
-                const editdata=await UserModel.findById(req.query.id)
-                res.render("EditForm",{editdata})
-            } 
-            else {
-                  res.redirect("/")
-            }
-    }
-}
-catch(err) {
-   console.log(err);
+    editdata ?  res.render("EditForm",{editdata}) : res.redirect("/")
+
    
 }
-    
-}
+
 module.exports.updatedata=async(req,res)=>{
 
   
@@ -225,7 +103,7 @@ module.exports.updatedata=async(req,res)=>{
          }
          
          req.body.img=image
-
+         
         const updatedata=await UserModel.findByIdAndUpdate(req.query.id,req.body)
         res.redirect("/ViewForm")
     }
@@ -233,4 +111,81 @@ module.exports.updatedata=async(req,res)=>{
        console.log(err);
        
     }
+}
+
+
+module.exports.changepass=(req,res)=>{
+    res.render("changepass")
+}
+module.exports.newpass=async(req,res)=>{
+    let admindata=await UserModel.findById(req.user.id);
+
+    if(admindata){
+        if(req.body.oldpass==admindata.password){
+            if(req.body.newpass==req.body.confirmpass){
+                const Newpassword=await UserModel.findByIdAndUpdate(admindata.id,{password : req.body.newpass});
+
+             Newpassword ? res.redirect("/logout") : console.log("Password is not changed");
+             
+            }
+            else {
+                console.log("new password and confirm password is diffrent");
+                res.redirect("/changepass");
+                
+            }
+        }
+        else {
+       res.redirect("/changepass");    
+        }
+    }
+    else {
+        res.redirect("/changepass");                                
+    }
+    
+}
+
+module.exports.forgetpass=async(req,res)=>{
+    let adminData=await UserModel.findOne({email : req.body.email})
+
+    if(!adminData){
+         return res.redirect("/")
+    }
+    let otp = Math.floor(Math.random()* 100000 + 800000 );
+    mailer.sendOtp(req.body.email,otp);
+    
+   req.session.otp=otp;
+   req.session.adminId=adminData.id;
+   
+
+  
+   res.render("newpass");
+   
+    
+}
+
+module.exports.checkOtp=async(req,res)=>{
+    let otp =req.session.otp
+    let adminId=req.session.adminId;
+    console.log(adminId)
+    
+    if(req.body.otp==otp){
+         if(req.body.newpass==req.body.confirmpass){
+            let changeAuth=await UserModel.findByIdAndUpdate(adminId , {
+                password: req.body.newpass});
+                  
+            
+
+            changeAuth && res.redirect("/")
+            
+         }
+         
+         else{
+            res.redirect("/");
+         }
+     
+    }
+    else {
+        res.redirect("/");
+    }
+    
 }
